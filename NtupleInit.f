@@ -233,7 +233,7 @@ c	endif
 	     NtupleTag(m) = 'Thrho' ! 58 or 66
 	  endif
 	    
-	else if (doing_hyd_elast .or. doing_deuterium .or. doing_heavy) then
+	else if (doing_hyd_elast .or. doing_nuc_elast .or. doing_deuterium .or. doing_heavy) then
 	  m = m+1
 	  NtupleTag(m) = 'corrsing'	! 34
 	  m = m+1

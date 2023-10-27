@@ -668,9 +668,12 @@ c	  write(7,*) 'BP thingie in/out     ',shmsSTOP_BP_in,shmsSTOP_BP_out
 	    write(iun,*) '              ****--------  D(e,e''p)  --------****'
 	  else if (doing_heavy) then
 	    write(iun,*) '              ****--------  A(e,e''p)  --------****'
+	  else if (doing_nuc_elast) then
+	     write(iun,*) '              ****--------  A(e,e'')A  --------****'
 	  else
 	    stop 'I don''t have ANY idea what (e,e''p) we''re doing!!!'
 	  endif
+
 	else if (doing_semi) then 
 	   if (doing_semipi) then 
 	      if (targ%A .eq. 1) then 
@@ -872,6 +875,7 @@ c	  write(7,*) 'BP thingie in/out     ',shmsSTOP_BP_in,shmsSTOP_BP_out
      >		'doing_phsp', doing_phsp
 	write(iun,'(5x,2(2x,a19,''='',i2))') 'which_pion', which_pion,
      >		'which_kaon', which_kaon
+	write(iun,'(5x,1(2x,a19,''='',l2))') 'doing_nuc_elast', doing_nuc_elast
 	write(iun,'(5x,3(2x,a19,''='',l2))') 'doing_hyd_elast', doing_hyd_elast,
      >		'doing_deuterium', doing_deuterium, 'doing_heavy', doing_heavy
 	write(iun,'(5x,3(2x,a19,''='',l2))') 'doing_hydpi', doing_hydpi,

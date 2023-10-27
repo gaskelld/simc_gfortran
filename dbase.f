@@ -4,6 +4,7 @@
 ! Note that there are four INDEPENDENT ways to run SIMC.
 !
 ! 1. doing_eep: (e,e'p) subcases:doing_hyd_elast, doing_deuterium, doing_heavy
+!   1.a Introduce doing_nuc_elast - this will be set with a special flag
 !
 ! 2. doing_kaon:(e,e'K) subcases:doing_hydkaon, doing_deutkaon,doing_hekaon.
 !	which_kaon= 0/ 1/ 2 for Lambda/Sigam0/Sigma- quasifree.
@@ -196,7 +197,9 @@ C DJG:
 	   doing_deutrho = (nint(targ%A).eq.2)
 	   doing_herho = (nint(targ%A).eq.3)
 	   doing_eep=.false.
-
+	else if (doing_nuc_elast) then
+	   Mh=targ%mass_amu*amu
+	   doing_eep=.true.
 	else		!doing_eep if nothing else set.
 	  Mh=Mp
 	  doing_eep = .true.
@@ -651,15 +654,19 @@ C DJG:
 ! ... some announcements
 
 	if (doing_eep) then
-	  if (doing_hyd_elast) then
-	    write(6,*) ' ****--------  H(e,e''p)  --------****'
-	  else if (doing_deuterium) then
-	    write(6,*) ' ****--------  D(e,e''p)  --------****'
-	  else if (doing_heavy) then
-	    write(6,*) ' ****--------  A(e,e''p)  --------****'
-	  else
-	    stop 'I don''t have ANY idea what (e,e''p) we''re doing!!!'
-	  endif
+	   if (doing_hyd_elast) then
+	      write(6,*) ' ****--------  H(e,e''p)  --------****'
+	   else if (doing_deuterium) then
+	      write(6,*) ' ****--------  D(e,e''p)  --------****'
+	   else if (doing_heavy) then
+	      write(6,*) ' ****--------  A(e,e''p)  --------****'
+	   else if (doing_nuc_elast) then
+	      write(6,*) ' ****--------  A(e,e'')  --------****'
+	   else
+	      stop 'I don''t have ANY idea what (e,e''p) we''re doing!!!'
+	   endif
+
+
 
 	else if (doing_semi) then 
            if (doing_semipi) then
@@ -888,6 +895,7 @@ c	      stop
 	ierr = regparmdouble('Ebeam',Ebeam,0)
 	ierr = regparmdouble('dEbeam',dEbeam,0)
 	ierr = regparmdouble('EXPER%charge',EXPER%charge,0)
+	ierr = regparmint('doing_nuc_elast',doing_nuc_elast,0)
 	ierr = regparmint('doing_kaon',doing_kaon,0)
 	ierr = regparmint('which_kaon',which_kaon,0)
 	ierr = regparmint('doing_pion',doing_pion,0)
