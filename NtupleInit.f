@@ -256,6 +256,10 @@ c	endif
 	  NtupleTag(m) = 'sigcc'	! 43
 	  m = m+1
 	  NtupleTag(m) = 'Weight'	! 44
+	  m = m+1
+	  NtupleTag(m) = 'thetae_v'	! 45
+	  m = m+1
+	  NtupleTag(m) = 'thetae_r'	! 46
 	endif
 
 !	else		!used to be the if (doing_phsp) option.

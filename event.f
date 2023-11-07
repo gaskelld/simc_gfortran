@@ -1329,6 +1329,15 @@ CDJG Calculate the "Collins" (phi_pq+phi_targ) and "Sivers"(phi_pq-phi_targ) ang
 	if (debug(5)) write(6,*) 'recon%Pm,recon%Trec,recon%Em',recon%Pm,recon%Trec,recon%Em
 	if (debug(4)) write(6,*)'comp_rec_ev: at 10'
 
+! Calculate the electron and proton PHYSICS angles from the spectrometer angles.
+! Note that the proton angles are not yet know for hydrogen elastic.
+! NOTE: this needs to be done again for the exclusive rho stuff (just on the hadron side).
+
+	call physics_angles(spec%e%theta,spec%e%phi,
+     &		recon%e%xptar,recon%e%yptar,recon%e%theta,recon%e%phi)
+	call physics_angles(spec%p%theta,spec%p%phi,
+     &		recon%p%xptar,recon%p%yptar,recon%p%theta,recon%p%phi)
+
 	success=.true.
 	return
 	end
