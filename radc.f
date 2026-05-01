@@ -286,7 +286,7 @@ cdg	endif
 ! ... generated energy available.
 
 	  else if (doing_pion .or. doing_kaon .or. doing_rho .or. 
-     >  	 doing_semi) then
+     >  	 doing_semi .or. doing_dvcs) then
 	    if (debug(5)) write(6,*)'gen_rad: at 2d'
 	    Egamma_min(1) = 0.
 	    Egamma_max(1) = gen%sumEgen%max - vertex%e%E

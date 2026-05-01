@@ -1,5 +1,6 @@
 	subroutine limits_update(main,vertex,orig,recon,doing_deuterium,
-     >		doing_pion,doing_kaon,doing_delta,doing_rho,contrib,slop)
+     >       doing_pion,doing_kaon,doing_dvcs,doing_delta,doing_rho,
+     >       contrib,slop)
 
 	USE structureModule
 	implicit none
@@ -11,7 +12,7 @@ c	include 'structures.inc'
 	type(contribtype):: contrib
 	type(sloptype):: slop
 	integer i
-	logical	doing_deuterium, doing_pion, doing_kaon, doing_delta, doing_rho
+	logical	doing_deuterium, doing_pion, doing_kaon, doing_delta, doing_rho, doing_dvcs
 
 ! Update the "contribution limits" records
 
@@ -25,7 +26,7 @@ c	include 'structures.inc'
 	call update_range(main%Trec, contrib%gen%Trec)
 
 ! ........ another tricky shift
-	if (doing_deuterium .or. doing_pion .or. doing_kaon .or. doing_delta .or. doing_rho) then
+	if (doing_deuterium .or. doing_pion .or. doing_kaon .or. doing_dvcs .or. doing_delta .or. doing_rho) then
 	  call update_range(vertex%e%E-main%Ein_shift,contrib%gen%sumEgen)
 	else
 	  call update_range(vertex%e%E+vertex%p%E-main%Ein_shift,contrib%gen%sumEgen)
@@ -228,6 +229,7 @@ C modified 5/15/06 for poinct
 !	Solve for hadron momentum.
 ! doing_kaon: as doing_pion.
 ! doing_delta: as doing_pion.
+! doing_dvcs: as doing_pion.	
 ! doing_rho: as doing_pion.
 ! doing_semi: Generate electron E,yptar,xptar and hadron E, yptar,xptar
 !
@@ -278,7 +280,7 @@ C modified 5/15/06 for poinct
 
 ! Generate Hadron Angles (all but H(e,e'p)):
 	if (doing_deuterium.or.doing_heavy.or.doing_pion.or.doing_kaon
-     >         .or.doing_delta.or.doing_semi) then
+     >         .or.doing_dvcs.or.doing_delta.or.doing_semi) then
 	  vertex%p%yptar=gen%p%yptar%min+grnd()*
      >  	(gen%p%yptar%max-gen%p%yptar%min)
 	  vertex%p%xptar=gen%p%xptar%min+grnd()*
@@ -298,10 +300,10 @@ C modified 5/15/06 for poinct
 
 ! Generate Electron Energy (all but hydrogen elastic)
 	if (doing_deuterium.or.doing_heavy.or.doing_pion.or.doing_kaon
-     >       .or.doing_delta.or.doing_rho.or.doing_semi) then
+     >       .or.doing_dvcs.or.doing_delta.or.doing_rho.or.doing_semi) then
 	  Emin=gen%e%E%min
 	  Emax=gen%e%E%max
-	  if (doing_deuterium .or. doing_pion .or. doing_kaon .or. doing_delta .or. doing_rho) then
+	  if (doing_deuterium .or. doing_pion .or. doing_kaon .or. doing_delta .or. doing_rho .or. doing_dvcs) then
 	    Emin = max(Emin,gen%sumEgen%min)
 	    Emax = min(Emax,gen%sumEgen%max)
 	  else if (doing_heavy) then		! A(e,e'p)
@@ -334,7 +336,8 @@ C modified 5/15/06 for poinct
 	vertex%Em=0.0
 	efer=targ%Mtar_struck		!used for pion/kaon xsec calcs.
 	if(doing_deutpi.or.doing_hepi.or.doing_deutkaon.or.doing_hekaon.or.
-     >      doing_deutdelta.or.doing_hedelta.or.doing_deutrho.or.doing_herho
+     >      doing_deutdvcs.or.doing_hedvcs.or.doing_deutdelta.or.
+     >      doing_hedelta.or.doing_deutrho.or.doing_herho
      >      .or.doing_deutsemi)then
 	  ranprob=grnd()
 	  ii=1
@@ -360,12 +363,12 @@ C modified 5/15/06 for poinct
 	  pferz=cos(ranth)
 
 	  if (doing_deutpi.or.doing_deutkaon.or.doing_deutdelta
-     >        .or.doing_deutrho .or.doing_deutsemi) then !Em = binding energy
+     >        .or.doing_deutdvcs.or.doing_deutrho .or.doing_deutsemi) then !Em = binding energy
 	    vertex%Em = Mp + Mn - targ%M
 	    m_spec = targ%M - targ%Mtar_struck + vertex%Em != Mn(Mp) for pi+(-)
 	    efer = targ%M - sqrt(m_spec**2+pfer**2)
 	  endif
-	  if (doing_hepi .or. doing_hekaon .or. doing_hedelta .or. doing_herho) then
+	  if (doing_hepi .or. doing_hekaon .or. doing_hedvcs .or. doing_hedelta .or. doing_herho) then
 	    call generate_em(pfer,vertex%Em)		!Generate Em
 	    m_spec = targ%M - targ%Mtar_struck + vertex%Em != M^*_{A-1}
 	    efer = targ%M - sqrt(m_spec**2+pfer**2)
@@ -605,7 +608,7 @@ c PB: from resmod507 in first call to semi_physics.f
 	  main%jacobian = abs(main%jacobian)
 
 
-	elseif (doing_pion .or. doing_kaon .or. doing_delta) then
+	elseif (doing_pion .or. doing_kaon .or. doing_delta .or. doing_dvcs) then
 	   
 c	  if (doing_rho) then 
 c	     Mh = Mrho
@@ -644,7 +647,7 @@ C switch to relativistic BW for Delta
 ! acceptance.  If the low momentum solution IS within the acceptance, we
 ! have big problems.
 	  if (doing_deutpi.or.doing_hepi.or.doing_deutkaon.or.doing_hekaon.or.
-     >        doing_deutdelta.or.doing_hedelta.or.doing_herho) then
+     >        doing_deutdvcs.or.doing_hedvcs.or.doing_deutdelta.or.doing_hedelta.or.doing_herho) then
 	    a = a - abs(pfer)*(pferx*vertex%up%x+pfery*vertex%up%y+pferz*vertex%up%z)
 	    b = b + pfer**2 + 2*vertex%q*abs(pfer)*
      >  	 (pferx*vertex%uq%x+pfery*vertex%uq%y+pferz*vertex%uq%z)
@@ -696,7 +699,7 @@ C switch to relativistic BW for Delta
 	  if (vertex%p%E.le.Mh) return
 	  vertex%p%P = sqrt(vertex%p%E**2 - Mh2)
 	  vertex%p%delta = (vertex%p%P - spec%p%P)*100./spec%p%P
-!	write(6,*) 'p,e=',vertex%p%P,vertex%p%E
+c	  write(6,*) 'p,e=',vertex%p%P,vertex%p%E,vertex%p%delta
 
 	elseif (doing_rho) then
 	   call generate_rho(vertex,success)  !generate rho in 4pi in CM
@@ -720,7 +723,7 @@ C switch to relativistic BW for Delta
 ! Compute some pion and kaon stuff.  Some of these should be OK for proton too.
 
 
-	if (doing_pion .or. doing_kaon .or. doing_delta .or. doing_rho .or. doing_semi) then
+	if (doing_pion .or. doing_kaon .or. doing_dvcs .or. doing_delta .or. doing_rho .or. doing_semi) then
 	  W2 = targ%Mtar_struck**2 + 2.*targ%Mtar_struck*vertex%nu - vertex%Q2
 	  main%W = sqrt(abs(W2)) * W2/abs(W2) 
 	  main%epsilon=1./(1. + 2.*(1+vertex%nu**2/vertex%Q2)*tan(vertex%e%theta/2.)**2)
@@ -944,10 +947,10 @@ CDJG Calculate the "Collins" (phi_pq+phi_targ) and "Sivers"(phi_pq-phi_targ) ang
 	  vertex%Mrec = sqrt(vertex%Emiss**2-vertex%Pmiss**2)
 	  vertex%Em = targ%Mtar_struck + vertex%Mrec - targ%M
 	  vertex%Trec = sqrt(vertex%Mrec**2 + vertex%Pm**2) - vertex%Mrec
-	else if (doing_hydpi .or. doing_hydkaon .or. doing_hyddelta .or. doing_hydrho) then
+	else if (doing_hydpi .or. doing_hydkaon .or. doing_hyddvcs .or. doing_hyddelta .or. doing_hydrho) then
 	  vertex%Trec = 0.0
 	else if (doing_deutpi.or.doing_hepi.or.doing_deutkaon.or.doing_hekaon.or.doing_deutdelta
-     >	    .or.doing_hedelta.or.doing_deutrho.or.doing_herho) then
+     >	    .or.doing_deutdvcs.or.doing_hedvcs.or.doing_hedelta.or.doing_deutrho.or.doing_herho) then
 	  vertex%Trec = sqrt(vertex%Mrec**2 + vertex%Pm**2) - vertex%Mrec
 	else if (doing_semi) then
 	   vertex%Pm = vertex%Pmiss
@@ -961,11 +964,11 @@ CDJG Calculate the "Collins" (phi_pq+phi_targ) and "Sivers"(phi_pq-phi_targ) ang
 ! calculate krel for deuteron/heavy pion(kaon).  Deuteron is straightforward.
 ! A>2 case is some approximation for 3He (DJG).
 
-	if (doing_deutpi .or. doing_deutkaon .or. doing_deutdelta .or. doing_deutrho) then
+	if (doing_deutpi .or. doing_deutkaon .or. doing_deutdvcs .or. doing_deutdelta .or. doing_deutrho) then
 	  if ((vertex%Emiss**2-vertex%Pmiss**2).lt.0) write(6,*) 'BAD MM!!!!! Emiss,Pmiss=',vertex%Emiss, vertex%Pmiss
 	  MM = sqrt(max(0.e0,vertex%Emiss**2-vertex%Pmiss**2))
 	  krel = sqrt( max(0.e0,MM**2-4.*targ%Mrec_struck**2) )
-	else if (doing_hepi .or. doing_hekaon .or. doing_hedelta .or. doing_herho) then
+	else if (doing_hepi .or. doing_hekaon .or. doing_hedvcs .or. doing_hedelta .or. doing_herho) then
 	  if ((vertex%Emiss**2-vertex%Pmiss**2).lt.0) write(6,*) 'BAD MM!!!!! Emiss,Pmiss=',vertex%Emiss, vertex%Pmiss
 	  MM = sqrt(max(0.e0,vertex%Emiss**2-vertex%Pmiss**2))
 	  krelx = vertex%Pmx + 1.5*pferx*pfer
@@ -1017,7 +1020,7 @@ C DJG Since we generate rho's in 4pi (in spherical angles) we don't need no
 C DJG stinkin' Jacobian!
 
 	if (doing_heavy .or. doing_pion .or. doing_kaon .or. 
-     >      doing_delta .or. doing_semi) then
+     >      doing_delta .or. doing_semi .or. doing_dvcs) then
 	  r = sqrt(1.+vertex%p%yptar**2+vertex%p%xptar**2)
 	  main%jacobian = main%jacobian / r**3		 !1/cos**3(theta-theta0)
 	endif
@@ -1320,7 +1323,7 @@ CDJG Calculate the "Collins" (phi_pq+phi_targ) and "Sivers"(phi_pq-phi_targ) ang
 	recon%PmOop = (recon%Pmx*oop_x + recon%Pmy*oop_y) / sqrt(oop_x**2+oop_y**2)
 	recon%PmPer = sqrt( max(0.e0, recon%Pm**2 - recon%PmPar**2 - recon%PmOop**2 ) )
 
-	if (doing_pion .or. doing_kaon .or. doing_delta .or. doing_rho .or. doing_semi) then
+	if (doing_pion .or. doing_kaon .or. doing_dvcs .or. doing_delta .or. doing_rho .or. doing_semi) then
 	  recon%Em = recon%nu + targ%Mtar_struck - recon%p%E
           mm2 = recon%Em**2 - recon%Pm**2
           mm  = sqrt(abs(mm2)) * abs(mm2)/mm2
@@ -1347,7 +1350,7 @@ CDJG Calculate the "Collins" (phi_pq+phi_targ) and "Sivers"(phi_pq-phi_targ) ang
 	else if (doing_deuterium .or. doing_heavy) then
 	  recon%Trec = sqrt(recon%Pm**2+targ%Mrec**2) - targ%Mrec
 	  recon%Em = recon%nu + targ%Mtar_struck - recon%p%E - recon%Trec
-	else if (doing_pion .or. doing_kaon .or. doing_delta .or. doing_rho) then
+	else if (doing_pion .or. doing_kaon .or. doing_dvcs .or. doing_delta .or. doing_rho) then
 	  recon%Em = recon%nu + targ%Mtar_struck - recon%p%E
 	endif
 
@@ -1368,7 +1371,7 @@ CDJG Calculate the "Collins" (phi_pq+phi_targ) and "Sivers"(phi_pq-phi_targ) ang
 	include 'simulate.inc'
 
 	integer		i, iPm1
-	real*8		a, b, r, frac, peepi, peeK, peedelta, peerho, peepiX
+	real*8		a, b, r, frac, peepi, peeK, peedelta, peerho, peepiX, peegamma
 	real*8		survivalprob, semi_dilution
 	real*8		weight, width, sigep, deForest, tgtweight
 	logical		force_sigcc, success
@@ -1394,7 +1397,7 @@ CDJG Calculate the "Collins" (phi_pq+phi_targ) and "Sivers"(phi_pq-phi_targ) ang
 
 ! The spectral function weighting
 
-	if (doing_hyd_elast.or.doing_pion.or.doing_kaon.or.doing_delta.or.doing_phsp.or.doing_rho.or.doing_semi) then !no SF.
+	if (doing_hyd_elast.or.doing_pion.or.doing_kaon.or.doing_dvcs.or.doing_delta.or.doing_phsp.or.doing_rho.or.doing_semi) then !no SF.
 	  main%SF_weight=1.0
 	else if (use_benhar_sf.and.doing_heavy) then ! Doing Spectral Functions
 	   call sf_lookup_diff(vertex%Em, vertex%Pm, weight)
@@ -1508,6 +1511,15 @@ C empirical check's.
 	    tgtweight = targ%Z
 	  endif
 
+	elseif (doing_dvcs) then
+	  main%sigcc = peegamma(vertex,main)
+	  main%sigcc_recon = 1.0
+	  if (which_dvcs.eq.1) then  !OK for coherent???
+	    tgtweight = targ%N
+	  else
+	    tgtweight = targ%Z
+	  endif
+	  
 	elseif (doing_delta) then
 	  main%sigcc = peedelta(vertex,main)	!Need new xsec model.
 	  main%sigcc_recon = 1.0

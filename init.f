@@ -341,17 +341,17 @@ c	include 'histograms.inc'
 	  endif
 	  VERTEXedge%Em%min = E_Fermi
 	  VERTEXedge%Em%max = 1000.	!Need Egamma_tot_max for good limit.
-	else if (doing_hydpi .or. doing_hydkaon .or. doing_hyddelta .or. doing_hydrho) then
+	else if (doing_hydpi .or. doing_hydkaon .or. doing_hyddvcs .or. doing_hyddelta .or. doing_hydrho) then
 	  VERTEXedge%Em%min = 0.0
 	  VERTEXedge%Em%max = 0.0
 	  VERTEXedge%Pm%min = 0.0
 	  VERTEXedge%Pm%max = 0.0
-	else if (doing_deutpi .or. doing_deutkaon .or. doing_deutdelta .or. doing_deutrho) then
+	else if (doing_deutpi .or. doing_deutkaon .or. doing_deutdvcs .or. doing_deutdelta .or. doing_deutrho) then
 	  VERTEXedge%Em%min = Mp + Mn - targ%M		!2.2249 MeV, I hope.
 	  VERTEXedge%Em%max = Mp + Mn - targ%M
 	  VERTEXedge%Pm%min = 0.0
 	  VERTEXedge%Pm%max = pval(nump)
-	else if (doing_hepi .or. doing_hekaon .or. doing_hedelta .or. doing_herho) then
+	else if (doing_hepi .or. doing_hekaon .or. doing_hedvcs .or. doing_hedelta .or. doing_herho) then
 	  VERTEXedge%Em%min = targ%Mtar_struck + targ%Mrec - targ%M
 	  VERTEXedge%Em%max = Emval(numEm)
 	  VERTEXedge%Pm%min = 0.0
@@ -475,7 +475,7 @@ c	   gen%sumEgen%min = Ebeam_min - VERTEXedge%Trec%max - VERTEXedge%Trec_struck%
 	  gen%e%E%min = edge%e%E%min
 	  gen%e%E%max = edge%e%E%max + Egamma2_max
 	else if (doing_deuterium .or. doing_pion .or. doing_kaon 
-     >      .or. doing_rho .or. doing_delta) then
+     >      .or. doing_dvcs .or. doing_rho .or. doing_delta) then
 	  gen%e%E%min = gen%sumEgen%min
 	  gen%e%E%max = gen%sumEgen%max
 	else if (doing_heavy .or. doing_semi) then
@@ -498,7 +498,7 @@ c	   gen%sumEgen%min = Ebeam_min - VERTEXedge%Trec%max - VERTEXedge%Trec_struck%
 ! ... except doing_heavy, but need to define for code that writes out limits.
 
 	if (doing_hyd_elast.or.doing_deuterium.or.doing_pion.or.doing_kaon .or.
-     >    doing_rho .or. doing_delta) then
+     >    doing_dvcs .or. doing_rho .or. doing_delta) then
 	  gen%p%E%min = edge%p%E%min
 	  gen%p%E%max = edge%p%E%max + Egamma3_max
 	else if (doing_heavy .or. doing_semi)then

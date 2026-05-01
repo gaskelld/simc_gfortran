@@ -331,7 +331,8 @@ cdg	call time (timestring1(11:23))
 
 ! ... update the "contribution" and "slop" limits
 	    call limits_update(main,vertex,orig,recon,doing_deuterium,
-     >		doing_pion,doing_kaon,doing_delta,doing_rho,contrib,slop)
+     >  	 doing_pion,doing_kaon,doing_dvcs,doing_delta,doing_rho,
+     >           contrib,slop)
 
 	  endif ! <success>
 
@@ -385,7 +386,7 @@ c	call time (timestring2(11:23))
 
 ! ... 2-fold to 5-fold.
 	if (doing_deuterium.or.doing_heavy.or.doing_pion.or.doing_kaon
-     >      .or.doing_delta.or.doing_rho .or. doing_semi) then
+     >      .or.doing_delta.or.doing_dvcs.or.doing_rho .or. doing_semi) then
 	  genvol = genvol * domega_p * (gen%e%E%max-gen%e%E%min)
 	endif
 
@@ -783,6 +784,16 @@ c	include 'histograms.inc'
 	  else
 	    stop 'I don''t have ANY idea what (e,e''K) we''re doing!!!'
 	  endif
+	else if (doing_dvcs) then
+	  if (doing_hyddvcs) then
+	    write(6,*) ' ****--------  H(e,e''p)gamma  --------****'
+	  else if (doing_deutdvcs) then
+	    write(6,*) ' ****--------  D(e,e''p)gamma  --------****'
+	  else if (doing_hedvcs) then
+	    write(6,*) ' ****--------  A(e,e''p)gamma  --------****'
+	  else
+	    stop 'I don''t have ANY idea what (e,e''p)gamma we''re doing!!!'
+	  endif
 	else if (doing_phsp) then
 	  write(iun,*) '              ****--- PHASE SPACE - NO physics, NO radiation (may not work)---****'
 	else
@@ -878,8 +889,8 @@ c	include 'histograms.inc'
      >		'doing_rho', doing_rho, 'doing_hplus', doing_hplus
 	write(iun,'(5x,3(2x,a19,''='',l2))') 'doing_semipi',doing_semipi,
      >		'doing_semika', doing_semika, 'doing_pizero',doing_pizero
-	write(iun,'(5x,2(2x,a19,''='',l2))') 'doing_delta',doing_delta,
-     >		'doing_phsp', doing_phsp
+	write(iun,'(5x,3(2x,a19,''='',l2))') 'doing_delta',doing_delta,
+     >		'doing_dvcs', doing_dvcs, 'doing_phsp', doing_phsp
 	write(iun,'(5x,3(2x,a19,''='',i2))') 'which_pion', which_pion,
      >		'which_kaon', which_kaon, 'pizero_ngamma',pizero_ngamma
 	write(iun,'(5x,3(2x,a19,''='',l2))') 'doing_hyd_elast', doing_hyd_elast,
@@ -887,7 +898,9 @@ c	include 'histograms.inc'
 	write(iun,'(5x,3(2x,a19,''='',l2))') 'doing_hydpi', doing_hydpi,
      >          'doing_deutpi', doing_deutpi, 'doing_hepi', doing_hepi
 	write(iun,'(5x,3(2x,a19,''='',l2))') 'doing_hydkaon', doing_hydkaon,
-     >		'doing_deutkaon', doing_deutkaon, 'doing_hekaon', doing_hekaon
+     >          'doing_deutkaon', doing_deutkaon, 'doing_hekaon', doing_hekaon
+	write(iun,'(5x,3(2x,a19,''='',l2))') 'doing_hyddvcs', doing_hyddvcs,
+     >          'doing_deutdvcs', doing_deutdvcs, 'doing_hedvcs', doing_hedvcs
 	write(iun,'(5x,3(2x,a19,''='',l2))') 'doing_hydsemi', doing_hydsemi,
      >          'doing_deutsemi', doing_deutsemi, 'do_fermi', do_fermi
 	write(iun,'(5x,3(2x,a19,''='',l2))') 'doing_hydrho', doing_hydrho,
@@ -1043,7 +1056,7 @@ c	include 'histograms.inc'
      >      contrib%vertex%Em%lo, contrib%vertex%Em%hi, 'MeV'
 	write(iun,9917) 'Pm', VERTEXedge%Pm%min, VERTEXedge%Pm%max,
      >       contrib%vertex%Pm%lo, contrib%vertex%Pm%hi, 'MeV/c'
-	if ((doing_deuterium .or. doing_pion .or. doing_kaon .or. doing_delta) .and. using_rad) then
+	if ((doing_deuterium .or. doing_pion .or. doing_kaon .or. doing_delta .or. doing_dvcs) .and. using_rad) then
 	   write(iun,*) '      *** NOTE: sumEgen.min only used in GENERATE_RAD'
 	endif
 
@@ -1376,7 +1389,7 @@ c	enddo
 ! Go from TRUE to SPECTROMETER quantities by computing target distortions
 ! ... ionization loss correction (if requested)
 
-	if (using_Eloss) then
+	if (using_Eloss.and..not.doing_dvcs) then
 	  if (debug(3)) write(6,*)'mc: p arm stuff0 =',
      >		orig%p%E,main%target%Eloss(3),spec%p%P
 	  main%SP%p%delta = (sqrt(abs((orig%p%E-main%target%Eloss(3))**2
@@ -1554,12 +1567,15 @@ c needs to initialize here since not initialized in mc_calo (like in other singl
 	       else
 		  stop 'pizero_ngamma not set correctly (should be 1 or 2), stopping'
 	       endif
-	    else ! if not doing pizero, just need to call once
+	    else		! if not doing pizero, just need to call once
 	       call mc_calo(spec%p%p, spec%p%theta, delta_p_arm, x_p_arm,
      >		y_p_arm, z_p_arm, dx_p_arm, dy_p_arm, xfp, dxfp, yfp, dyfp,
      >		m2, mc_smear, mc_smear, doing_decay,
      >		ntup%resfac, frx, fry, ok_P_arm, pathlen, using_tgt_field,
-     >          zhadron,hadron_arm,drift_to_cal)
+     >  	zhadron,hadron_arm,drift_to_cal)
+	       ntup%xcal_gamma1=xfp
+	       ntup%ycal_gamma1=yfp
+	       ntup%Egamma=spec%p%p*(1.0+delta_p_arm/100.0)
 	    endif
 	 endif
 

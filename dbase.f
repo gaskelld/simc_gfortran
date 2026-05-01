@@ -179,6 +179,21 @@ C DJG:
 	    doing_hekaon = .false.
 	  endif
 
+	else if (doing_dvcs) then
+	  Mh=0.0d0
+	  doing_hyddvcs = (nint(targ%A).eq.1)
+	  doing_deutdvcs = (nint(targ%A).eq.2)
+	  doing_hedvcs = (nint(targ%A).ge.3)
+	  doing_eep = .false.
+
+* quasifree production is default (which_dvcs=0).
+* Treat (A+pi) final state as production from heavy proton (+10 to which_dvcs)
+	  if (which_dvcs.ge.10) then
+	    doing_hyddvcs = .true.
+	    doing_deutdvcs = .false.
+	    doing_hedvcs = .false.
+	  endif
+
 	else if (doing_delta) then
 	  Mh=Mp
 	  if (nint(targ%A).ge.2) 
@@ -229,6 +244,7 @@ C DJG:
 	  doing_eep=.false.	!need to set one of these to determine Mh,
 	  doing_pion=.false.	!but doing_phsp is independent of others.
 	  doing_kaon=.false.
+	  doing_dvcs=.false.
 	  doing_delta=.false.
 	  doing_rho=.false.
 	endif
@@ -435,6 +451,28 @@ c	   endif
 	    endif
 	    targ%Mrec = 0.	!no 'A-1' recoil system for coherent production.
 	  endif
+
+! ... for normal production, Strike p(n), recoil is p (n).
+! ... for bound final state, use targ.Mrec if it appears to be OK (same A
+! ... A as target
+
+	else if (doing_dvcs) then	!Strike p(n)
+	  if (which_dvcs .eq. 0) then		! p(e,e\gamma)p
+	    targ%Mtar_struck = Mp
+	    targ%Mrec_struck = Mp
+	    sign_hadron=1.0
+	  else if (which_dvcs .eq. 1) then	! n(e,e\gamma)n
+	    targ%Mtar_struck = Mn
+	    targ%Mrec_struck = Mn
+	    sign_hadron=1.0
+	  else if (which_dvcs .eq. 10) then	!A(e,e\gamma)A (coherent)
+	    targ%Mtar_struck = targ%M
+	    targ%Mrec_struck = targ%M
+	    sign_hadron=1.0
+	  else
+	    stop 'Bad value for which_dvcs'
+	  endif
+	  
 	endif
 
 ! ... Now that we know targ.Mtar_struck, we can improve the precision of
@@ -503,7 +541,7 @@ c	   endif
 	endif
 
 	if (abs(one_tail).gt.3 .and. using_rad)
-     >     stop 'Moron! one_tail>3 turns radiation off, but using_rad wants it on.'
+     >   stop 'Moron! one_tail>3 turns radiation off, but using_rad wants it on.'
 
 	if (.not.using_rad) then
 	  do i = 1, 3
@@ -560,9 +598,9 @@ c	   endif
 ! ... Read in (and normalize) momentum distribution.  Normalizing to one
 ! ... may not be correct if there is strength beyond p=p_max (MeV/c)
 
-	if(doing_deutpi.or.doing_hepi.or.doing_deutkaon.or.doing_hekaon.or.doing_deutsemi) then
-	  if(doing_deutpi .or. doing_deutkaon .or. doing_deutsemi) open(1,file='deut.dat',status='old',form='formatted')
-	  if(doing_hepi .or. doing_hekaon) then
+	if(doing_deutpi.or.doing_hepi.or.doing_deutkaon.or.doing_hekaon.or.doing_deutsemi.or.doing_deutdvcs.or.doing_hedvcs) then
+	  if(doing_deutpi.or.doing_deutkaon.or.doing_deutsemi.or.doing_deutdvcs) open(1,file='deut.dat',status='old',form='formatted')
+	  if(doing_hepi .or. doing_hekaon .or. doing_hedvcs) then
 	    if (nint(targ%A).eq.3) then
 	      open(1,file='he3.dat',status='old',form='formatted')
 	    else if (nint(targ%A).eq.4) then
@@ -591,7 +629,7 @@ c	   endif
 ! ... Em_max,Pm_max.
 !      Also load spectral function for deuterium of heavy so we have the choice later
 !      to use it for (e,e'p)
-	if(doing_hepi.or.doing_hekaon .or. (doing_heavy.and.use_benhar_sf)) then
+	if(doing_hepi.or.doing_hekaon.or.doing_hedvcs .or. (doing_heavy.and.use_benhar_sf)) then
 	  if (nint(targ%A).eq.3) then
 	    write(6,*) 'Using the mod version of 3He S.F. rather than Paris.'
 	    tmpfile='benharsf_3mod.dat'
@@ -800,6 +838,22 @@ c	   endif
 	   else
 	      stop 'I don''t have ANY idea what (e,e''pi) we''re doing!!!'
 	   endif
+
+	else if (doing_dvcs) then
+	   if (doing_hyddvcs) then
+	      if (targ%A .eq. 1) then
+		 write(6,*) ' ****--------  H(e,e''gamma)  --------****'
+	      else if (targ%A .ge. 3) then
+		 write(6,*) ' ****--------  A(e,e''gamma)  --------****'
+	      endif
+	   else if (doing_deutdvcs) then
+	      write(6,*) ' ****--------  D(e,e''gamma)  --------****'
+	   else if (doing_hedvcs) then
+	      write(6,*) ' ****--------  A(e,e''gamma)  --------****'
+	   else
+	      stop 'I don''t have ANY idea what (e,e''dvcs) we''re doing!!!'
+	   endif
+	   
 	 if (doing_pizero) then
 	    write(6,*) ' ****-------  pi0 production  -------****'
 	    if(pizero_ngamma.eq.1) then
@@ -1000,6 +1054,8 @@ c	      stop
 	ierr = regparmint('which_kaon',which_kaon,0)
 	ierr = regparmint('doing_pion',doing_pion_int,0)
 	ierr = regparmint('which_pion',which_pion,0)
+	ierr = regparmint('doing_dvcs',doing_dvcs_int,0)
+	ierr = regparmint('which_dvcs',which_dvcs,0)
 	ierr = regparmint('doing_delta',doing_delta_int,0)
 	ierr = regparmint('doing_semi', doing_semi_int,0)
 	ierr = regparmint('doing_hplus', doing_hplus_int,1)
@@ -1138,6 +1194,7 @@ ccc
 	if(use_benhar_sf_int.gt.0) use_benhar_sf=.true.
         if(doing_kaon_int.gt.0) doing_kaon=.true. 
 	if(doing_pion_int.gt.0) doing_pion=.true.
+	if(doing_dvcs_int.gt.0) doing_dvcs=.true.
 	if(doing_delta_int.gt.0) doing_delta=.true.
 	if(doing_phsp_int.gt.0) doing_phsp=.true.
 	if(doing_semi_int.gt.0) doing_semi=.true.

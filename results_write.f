@@ -128,7 +128,7 @@ c	  ntu(11) = vertex%p%xptar			!mr
 	ntu(32) = recon%theta_pq			!theta_pq - radians
 	ntu(33) = recon%phi_pq				!phi_pq - radians
 
-	if (doing_pion .or. doing_kaon .or. doing_delta) then
+	if (doing_pion .or. doing_kaon .or. doing_delta .or. doing_dvcs) then
 	  ntu(34) = ntup%mm/1000.			!missmass (nucleon)
 	  ntu(35) = ntup%mmA/1000.			!missmass (nucleus)
 	  ntu(36) = recon%p%P/1000.			!ppi - GeV/c
@@ -183,6 +183,11 @@ c	  ntu(11) = vertex%p%xptar			!mr
 	     ntu(63) = ntup%gamma2(2)
 	     ntu(64) = ntup%gamma2(3)
 	     ntu(65) = ntup%gamma2(4)
+	  endif
+	  if(doing_dvcs) then
+	     ntu(54) = ntup%xcal_gamma1
+	     ntu(55) = ntup%ycal_gamma1
+	     ntu(56) = ntup%Egamma
 	  endif
 	else if (doing_semi.or.doing_rho) then
 	  ntu(34) = ntup%mm/1000.			!missmass (nucleon)

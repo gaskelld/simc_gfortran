@@ -79,7 +79,7 @@ c Use size of NPS
 	real*8 ps,p,m2				!More kinematic variables.
 	real*8 xt,yt,rt,tht			!temporaries
 	real*8 resmult				!DC resolution factor
-	real*8 dummy
+	real*8 dummy,cal_res
 	real*8 zdrift
 
 	logical dflag			!has particle decayed?
@@ -117,10 +117,8 @@ c Use size of NPS
 	dydzs = dydz
 
 ! particle momentum
-
 	dpps = dpp
 	p = p_spec*(1.+dpps/100.)
-
 ! Begin transporting particle.
 
 ! Do transformations, checking against apertures.
@@ -137,50 +135,47 @@ c Use size of NPS
 	    goto 500
 	  endif
 
-c positions, angles at front
-	  x_fp = xs
-	  y_fp = ys
-	  dx_fp=dxdzs
-	  dy_fp=dydzs
-
-C       skip all this fow, after checking that we hit calorimeter, just fill output
-C       with input-maybe add some smearing later.
-	  
-c no difference between recon angle and "focal plane" angles
-c use the z position determined by the hadron arm to
-c correct the distance from the beam interaction point to the hit in the calo
-c
-c	   delta_y = -prot_zbeam*stheta
-c	   delta_z =  prot_zbeam*ctheta
-c   
-c	  dx_fp = (x_fp-fry)/(drift_to_cal-delta_z)
-c	  dy_fp = (y_fp-delta_y)/(drift_to_cal-delta_z)
-
 ! replace xs,ys,... with 'tracked' quantities.
-c	  xs=x_fp
-c	  ys=y_fp
-c	  dxdzs=dx_fp
-c	  dydzs=dy_fp
 
+C smear positions - Wassim's paper says position resolution expected to be better than
+c 2.5 mm for Egamma>0.5 GeV	  
+	  x_fp = xs + 0.25 * gauss1(99.0)
+	  y_fp = ys + 0.25 * gauss1(99.0)
 
-! Reconstruct target quantities.
-c	  call mc_calo_recon(dpp_recon,dth_recon,dph_recon,y_recon,fry,delta_y,delta_z,drift_to_cal)
-c
+	  xs=x_fp
+	  ys=y_fp
+	  dxdzs=0
+	  dydzs=0
+
+c smear energy. Wassim's paper is consistent with fixed energy resolution
+c of 1.25% for range 4.5 to 7.5 GeV, but also consistent with prototype, which has
+c more reasonable behavior at low Egamma - so I'll use that instead	  
+	  cal_res = sqrt((2.634/sqrt(p/1000.0))**2 + (1.073/(p/1000.0))**2 + 0.532**2) !%/GeV
+	  
+	  ps = p*(1+0.01*cal_res*gauss1(99.0))
+
+	  dpps = (ps/p_spec-1.0)*100.0
+
+!       Reconstruct target quantities.
+	  delta_z=0.0 ! use zero for now
+	  call mc_calo_recon(dpp_recon,dth_recon,dph_recon,y_recon,fry,delta_y,delta_z,drift_to_cal)
+
+c need a flag for charged particles or something	  
 c          if (using_tgt_field) then
 c	     ok = .TRUE.
 c	     call track_to_tgt(dpp_recon,y_recon,dph_recon,dth_recon,-frx,-fry,
 c     >  	  -p,sqrt(m2),ctheta,-stheta,prot_zbeam,-1,ok)
 c         endif
 ! Fill output to return to main code
-c	  dpp = dpp_recon
-c	  dxdz = dph_recon
-c	  dydz = dth_recon
-c	  y = y_recon
+	  dpp = dpp_recon
+	  dxdz = dph_recon
+	  dydz = dth_recon
+	  y = y_recon
 
 c	  dpp = dpps
 c	  dxdz = dxdzs
-c	  dydz = dydzs
-c	  y = ys	  
+c       dydz = dydzs
+	  y = ys	  
 	  ok_spec = .true.
 	  caloSTOP_successes = caloSTOP_successes + 1
 

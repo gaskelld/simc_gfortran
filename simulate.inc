@@ -67,9 +67,9 @@
 	logical doing_hyd_elast, doing_deuterium, doing_heavy
 	logical doing_eep, doing_pion, doing_delta, doing_kaon, doing_rho
 	logical doing_semi, doing_semipi, doing_semika, doing_hplus
-	logical doing_pizero
+	logical doing_pizero, doing_dvcs
 	integer*4 pizero_ngamma
-	integer*4 which_kaon, which_pion
+	integer*4 which_kaon, which_pion, which_dvcs
 	logical using_cit_generation, using_Coulomb, using_Eloss
 	logical correct_Eloss, correct_raster,do_fermi
 	logical using_tgt_field
@@ -83,6 +83,7 @@
 c variables that need to be translated from integer to logical
   	integer*4 mc_smear_int, use_benhar_sf_int,doing_kaon_int, doing_pion_int,doing_delta_int,doing_phsp_int
 	integer*4 doing_semi_int,doing_hplus_int,doing_pizero_int,doing_rho_int,doing_decay_int,do_fermi_int
+	integer*4 doing_dvcs_int
 	integer*4 debug_int(6)
 	integer*4 hard_cuts_int,using_rad_int,use_offshell_rad_int
 	integer*4 using_Eloss_int,correct_eloss_int,correct_raster_int,using_cit_generation_int
@@ -100,15 +101,15 @@ c variables that need to be translated from integer to logical
      >    extra_dbase_file,tgt_field_file,using_E_arm_montecarlo,using_P_arm_montecarlo,
      >    doing_phsp, using_rad, hard_cuts, doing_hyd_elast, doing_deuterium, doing_heavy,
      >    doing_eep, doing_pion, doing_delta, doing_kaon, doing_rho, doing_semi,
-     >    doing_semipi, doing_semika, doing_hplus, doing_pizero,pizero_ngamma,which_kaon,
-     >    which_pion, using_cit_generation, using_Coulomb, using_Eloss,
+     >    doing_semipi, doing_semika, doing_hplus, doing_pizero,doing_dvcs,pizero_ngamma,which_kaon,
+     >    which_pion, which_dvcs,using_cit_generation, using_Coulomb, using_Eloss,
      >    correct_Eloss, correct_raster, do_fermi,using_tgt_field,
      >    electron_arm, hadron_arm, use_first_cer, using_HMScoll, using_SHMScoll,
      >    transparency, use_benhar_sf,start_random_state_file,
      >    random_state_file, random_seed,
      >    mc_smear_int, use_benhar_sf_int,doing_kaon_int, doing_pion_int,doing_delta_int,doing_phsp_int,
      >    doing_semi_int,doing_hplus_int,doing_pizero_int,doing_rho_int,doing_decay_int,do_fermi_int,
-     >    debug_int,hard_cuts_int,using_rad_int,use_offshell_rad_int,
+     >    doing_dvcs_int,debug_int,hard_cuts_int,using_rad_int,use_offshell_rad_int,
      >    using_Eloss_int,correct_eloss_int,correct_raster_int,using_cit_generation_int,
      >    using_Coulomb_int, using_tgt_field_int, using_HMScoll_int, using_SHMScoll_int
 
@@ -146,6 +147,7 @@ C	real*8 decdist(30)
 	logical doing_decay
 	logical doing_hydpi, doing_deutpi, doing_hepi
 	logical doing_hydkaon, doing_deutkaon, doing_hekaon
+	logical doing_hyddvcs, doing_deutdvcs, doing_hedvcs	
 	logical doing_hyddelta, doing_deutdelta, doing_hedelta
 	logical doing_hydrho, doing_Deutrho, doing_herho
 	logical doing_hydsemi, doing_deutsemi, doing_hesemi
@@ -153,6 +155,7 @@ C	real*8 decdist(30)
 	common /decd/ ctau,doing_decay,
      >    doing_hydpi,doing_deutpi,doing_hepi,
      >    doing_hydkaon,doing_deutkaon,doing_hekaon,
+     >    doing_hyddvcs,doing_deutdvcs,doing_hedvcs,
      >    doing_hyddelta,doing_deutdelta,doing_hedelta,
      >    doing_hydrho, doing_deutrho, doing_herho,
      >    doing_hydsemi, doing_deutsemi, doing_hesemi
@@ -170,6 +173,7 @@ C Structure for variables that we want to available to the ntuple.
 		real*8 rhomass, rhotheta
 		real*8 gamma1(4),gamma2(4)
 		real*8 xcal_gamma1,ycal_gamma1,xcal_gamma2,ycal_gamma2
+		real*8 Egamma
 	end type
 
 	type (ntupvars):: ntup

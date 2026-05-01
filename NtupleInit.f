@@ -98,7 +98,7 @@ c	endif
 	NtupleTag(m) = 'thetapq'	! 32
 	m = m+1
 	NtupleTag(m) = 'phipq'		! 33
-	if (doing_pion .or. doing_kaon .or. doing_delta) then
+	if (doing_pion .or. doing_kaon .or. doing_delta .or. doing_dvcs) then
 	  m = m+1
 	  NtupleTag(m) = 'missmass'	! 34
 	  m = m+1
@@ -158,11 +158,19 @@ c	endif
 	     NtupleTag(m) = 'phici' ! 61
 	  endif
 	  if (doing_kaon) then
-	    m = m+1
-	    NtupleTag(m) = 'saghai'	! 54
-	    m = m+1
-	    NtupleTag(m) = 'factor'	! 55
+	     m = m+1
+	     NtupleTag(m) = 'saghai'	! 54
+	     m = m+1
+	     NtupleTag(m) = 'factor'	! 55
 	 endif
+	 if(doing_dvcs) then
+	     m = m+1
+	     NtupleTag(m) = 'xcal_gamma'
+	     m = m+1
+	     NtupleTag(m) = 'ycal_gamma'
+	     m = m+1
+	     NtupleTag(m) = 'Egamma'
+	  endif
 	 if(doing_pizero) then
 	     m = m+1
 	     NtupleTag(m) = 'xcal_gamma1'
