@@ -6,7 +6,7 @@
 * in the 'main' structure), and returns the pion cross section.
 *
 *   output:
-*	peepi		!d5sigma/dEe'dOmegae'Omegapi	(microbarn/MeV/sr^2)
+*	peegamma		!d5sigma/dEe'dOmegae'Omega	(microbarn/MeV/sr^2)
 
 	USE structureModule
 	implicit none
@@ -19,108 +19,170 @@
 * photon-NUCLEON center of mass, not the photon-NUCLEUS!  The model gives
 * the cross section in the photon-nucleon center of mass frame.
 
-	real*8 sigma_eegamma
-	real*8 k_eq			!equivalent photon energy.
-	real*8 gtpr			!gamma_t prime.
-	real*8 fac
-	real*8 tfcos,tfsin		!cos/sin of theta between pfermi and q
-	real*8 s
+	real*8 Q2gev,xb,thpqdeg,phpqdeg
+	real*8 sigma_eegamma,dvcs_xsec
 
-! Variables calculated in transformation to gamma-NUCLEON center of mass.
+	! Variables calculated in transformation to gamma-NUCLEON center of mass.
         real*8 gstar,bstar,bstarx,bstary,bstarz		!beta of boost to C.M.
         real*8 nustar,qstar,qstarx,qstary,qstarz	!q in C.M.
-        real*8 egcm,pgcm,pgcmx,pgcmy,pgcmz		!p_hadron in C.M.
+        real*8 epicm,ppicm,ppicmx,ppicmy,ppicmz		!p_hadron in C.M.
         real*8 ebeamcm,pbeamcm,pbeamcmx,pbeamcmy,pbeamcmz !p_beam in C.M.
         real*8 etarcm,ptarcm,ptarcmx,ptarcmy,ptarcmz	!p_fermi in C.M.
-        real*8 thetacm,phicm,phiqn,jacobian,jac_old
-	real*8 Wgev, Q2gev, E0, cthcm, sig0, fac1
-	logical first
-
-
-	data first /.TRUE./
-
-* Calculate velocity of PHOTON-NUCLEON C.M. system in the lab frame. Use beta
-* and gamma of the cm system (bstar and gstar) to transform particles into
-* c.m. frame.  Define z along the direction of q, and x to be along the
-* direction of the pion momentum perpendicular to q.
+        real*8 thetacm,phicm,phiqn,jacobian,jac_old,jacobian_dis
 
 	call transform_to_cm(vertex,main,
      &		gstar,bstar,bstarx,bstary,bstarz,
      &		nustar,qstar,qstarx,qstary,qstarz,
-     &		egcm,pgcm,pgcmx,pgcmy,pgcmz,
+     &		epicm,ppicm,ppicmx,ppicmy,ppicmz,
      &		ebeamcm,pbeamcm,pbeamcmx,pbeamcmy,pbeamcmz,
      &		etarcm,ptarcm,ptarcmx,ptarcmy,ptarcmz,
      &		thetacm,phicm,phiqn,jacobian,jac_old)
 
 	main%thetacm = thetacm
 	main%phicm = phicm
-	main%pcm = pgcm
+	main%pcm = ppicm
 	main%davejac = jacobian
 	main%johnjac = jac_old		!approx. assuming collinear boost.
+	
+	Q2gev=vertex%q2/1.0d6
+	xb=vertex%q2/2.0/Mp/vertex%nu
+	thpqdeg=main%theta_pq*degrad
+	phpqdeg=main%phi_pq*degrad
 
-!	write (6,*) jacobian,jac_old,100.*(jacobian-jac_old)/jacobian,'%'
+	sigma_eegamma=dvcs_xsec(Q2gev,xb,thpqdeg,phpqdeg)/1.0d9	! dsigma/(dQ2 dxb dt dphi) in nb/GeV2--> ub/MeV2
 
-
-* calculate some kinematical variables
-* 'f' and 'fer' indicate fermi momenta. 'star' or 'cm' indicate CM system
-* Some of the physics calculations (t,epsi,s, etc...) are redundant with
-* the calculations in event.f.  We should use the main.* variables from
-* complete_ev where possible.  WORSE YET, WE CHANGE UNITS OF MAIN.W,... HERE!!!
-
-	tfcos = pferx*vertex%uq%x+pfery*vertex%uq%y+pferz*vertex%uq%z
-	if(tfcos-1..gt.0..and.tfcos-1..lt.1.e-8)tfcos=1.0
-	tfsin=sqrt(1.-tfcos**2)
-
-	s = (vertex%nu+efer)**2-(vertex%q+pfer*tfcos)**2-(pfer*tfsin)**2
-	main%wcm = sqrt(s)
-
-
-
-*******************************************************************************
-* Get photon flux factor (two options, see comments below).
-*
-* DJG,2000: Replace targ.Mtar_struck in denominator of gammaflux with more 
-* general efer-pfer*tfcos, for pfer =0 this reverts to old form
-*	k_eq = (s-targ%Mtar_struck**2)/2./(efer-pfer*tfcos)
-*
-* JRA,2001: Go back to original version - more consistent with phase space used
-* in the subroutine (according to DJG - see gaskell_model.ps)
-	k_eq = (main%wcm**2-targ%Mtar_struck**2)/2./targ%Mtar_struck
-
-	ntup%sigcm1 = 1.0
-
-	sigma_eegamma = ntup%sigcm1
-
-
-	ntup%sigcm = sigma_eegamma		!sig_cm
-
-
-*******************************************************************************
-
-* sigma_eepi is two-fold C.M. cross section: d2sigma/dt/dphi_cm [ub/MeV**2/rad]
-* Convert from dt dphi_cm --> dOmega_lab using 'jacobian' [ub/sr]
-* Convert to 5-fold by multiplying by flux factor, gtpr [1/MeV]
-* to give d5sigma/dOmega_pi/dOmega_e/dE_e [ub/Mev/sr].
-*
-* Note that there is an additional factor 'fac' included with gtpr.   This
-* takes into account pieces in the flux factor that are neglected (=1) in
-* colinear collisions.  The flux factor is |v_1-v_2| * 2E_1 * 2E_2.
-* For a stationary target, v_2=0 and so velocity term is v_1=1 (electron
-* beam), and E_2=M_2.  For collinear boost, the flux factor can be expressed
-* in a way that is lorenz invariant, and so can be used for lab or C.M.
-* For a NON-COLLINEAR boost, there are two changes.  First, the |v| term
-* becomes 1 - (z component of pfer)/efer.  Second, E_2 isn't just the mass,
-* it becomes E_fermi, so we have to remove targ.Mtar_struck (which is used
-* for E_2 by default) and replace it with efer.  Since the flux factor 
-* comes in the denominator, we replace the usual flux factor (gtpr) with
-* gtpr*fac, where fac = 1/ ( (1-pfer_z/efer)* (efer/mtar_struck) ).
-
-
-	fac = 1./(1.-pferz*pfer/efer) * targ%Mtar_struck/efer
-	gtpr = alpha/2./(pi**2)*vertex%e%E/vertex%Ein*k_eq/vertex%q2/(1.-main%epsilon)
-
-	peegamma = sigma_eegamma*jacobian*(gtpr*fac) !ub/MeV^2/rad-->ub/sr-->ub/MeV/sr
+	ntup%sigcm=sigma_eegamma*1.0d9
+	
+	jacobian_dis = (main%w**2-Mp**2)*xb*vertex%e%E/(2.0*pi*Mp*vertex%nu)
+	
+	peegamma=sigma_eegamma*jacobian*jacobian_dis
 
 	return
 	end
+	
 
+	real*8 function dvcs_xsec(Q2,xb,thpq,phipq)
+c returns cross section, dsigma/(dQ2 dxb dt dphi) in nb/GeV2
+	
+	implicit none
+	
+	real*8 Q2,xb,t,thpq,phipq
+	real*8 Q2tab(46), Q2hi,Q2lo,dQ2,Q2d
+	real*8 xtab(56), xhi,xlo,dx,xd
+	real*8 phitab(36), phihi,philo,dphi,phid,phimax
+	real*8 thtab(21), thhi,thlo,dth,thd
+	real*8 c000,c001,c010,c100,c011,c101,c110,c111
+	real*8 c00,c01,c10,c11
+	real*8 c0,c1,c
+	real*8 q2dum,xdum,tdum,phidum,thdum
+
+	real*8 xsec(46,56,36,21)
+
+	integer i,j,k,l
+	logical first
+	data first/.true./
+	character*80 filename,line
+	
+	save
+
+c	write(6,*) 'top of dvcs_xsec',Q2,xb,thpq,phipq
+	if (first) then
+	   first=.false.
+	   filename='xs_table_10.6_HMS_GeV_corr.csv'
+	   write(6,*) 'Initializing and reading in DVCS cross section table',filename
+	   do i=1,46
+	      Q2tab(i)=1.0+(i-1)*0.2
+	   enddo
+	
+	   do i=1,56
+	      xtab(i)=0.15+(i-1)*0.01
+	   enddo
+
+	   do i=1,21
+	      thtab(i) = (i-1)*0.5
+	   enddo
+
+	   do i=1,36
+	      phitab(i) = (i-1)*10.0
+	   enddo
+
+	   open(unit=10, file=filename, status='old')
+	   read(10,'(a)') line !skip first line
+	   
+	   do i=1,46 ! Q2
+	     do j=1,56		!xBj
+		do k=1,36	!phipq
+		   do l=1,21	!thpq
+		      read(10,*) q2dum,xdum,tdum,phidum,thdum,xsec(i,j,k,l)
+c		      write(6,*) q2dum,xdum,tdum,phidum,thdum,xsec(i,j,k,l)
+		   enddo
+		enddo
+	      enddo
+	   enddo
+	endif
+
+C loop over variables, find table entries
+	c=0
+	do i=1,46		!Q2
+	   if(Q2.gt.Q2tab(i) .and. Q2.le.Q2tab(i+1)) then
+	      Q2lo=Q2tab(i)
+	      Q2hi=Q2tab(i+1)
+	      dQ2=Q2hi-Q2lo
+	      do j=1,56		!xBj
+		 if(xb.gt.xtab(j) .and. xb.le.xtab(j+1)) then
+		    xlo=xtab(j)
+		    xhi=xtab(j+1)
+		    dx=xhi-xlo
+		    do k=1,36	!phipq
+		       if(phipq.ge.350.0) then
+			  phimax=360.0
+		       else
+			  phimax=phitab(k+1)
+		       endif
+		       if(phipq.gt.phitab(k) .and. phipq.le.phimax) then
+			  philo=phitab(k)
+			  phihi=phitab(k+1)
+			  dphi=phihi-philo
+			  do l=1,21 !thpq
+			     if(thpq.gt.thtab(l) .and. thpq.le.thtab(l+1)) then
+				thlo=thtab(l)
+				thhi=thtab(l+1)
+				dth=thhi-thlo
+
+				Q2d=(Q2-Q2lo)/dQ2
+				xd=(xb-xlo)/dx
+				phid=(phipq-philo)/dphi
+				thd=(thpq-thlo)/dth
+
+				c000=xsec(i,j,k,l)*(1-Q2d)+xsec(i+1,j,k,l)*Q2d
+				c001=xsec(i,j,k,l+1)*(1-Q2d)+xsec(i+1,j,k,l+1)*Q2d
+				c010=xsec(i,j,k+1,l)*(1-Q2d)+xsec(i+1,j,k+1,l)*Q2d
+				c100=xsec(i,j+1,k,l)*(1-Q2d)+xsec(i+1,j+1,k,l)*Q2d
+
+				c011=xsec(i,j,k+1,l+1)*(1-Q2d)+xsec(i+1,j,k+1,l+1)*Q2d
+				c101=xsec(i,j+1,k,l+1)*(1-Q2d)+xsec(i+1,j+1,k,l+1)*Q2d
+				c110=xsec(i,j+1,k+1,l)*(1-Q2d)+xsec(i+1,j+1,k+1,l)*Q2d
+				c111=xsec(i,j+1,k+1,l+1)*(1-Q2d)+xsec(i+1,j+1,k+1,l+1)*Q2d
+
+				c00 = c000*(1-xd)+c100*xd !(0000 and 1000) and (0100 and 1100)
+				c01 = c001*(1-xd)+c101*xd !(0001 and 1001) and (0101 and 1101)
+				c10 = c010*(1-xd)+c110*xd !(0010 and 1010) and (0110 and 1110)
+				c11 = c011*(1-xd)+c111*xd !(0011 and 1011) and (0111 and 1111)
+
+				c0 = c00*(1-phid) + c10*phid
+				c1 = c01*(1-phid) + c11*phid
+
+				c = c0*(1-thd) + c1*thd
+			     endif ! theta
+			  enddo ! theta
+		       endif	! phi
+		    enddo	! phi
+		 endif		!xb
+	      enddo		!xb
+	   endif		! Q2
+	enddo			! Q2
+
+	dvcs_xsec=c
+
+	return
+	end
