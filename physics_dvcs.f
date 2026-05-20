@@ -76,7 +76,7 @@ c returns cross section, dsigma/(dQ2 dxb dt dphi) in nb/GeV2
 	real*8 c0,c1,c
 	real*8 q2dum,xdum,tdum,phidum,thdum
 
-	real*8 xsec(46,56,36,21)
+	real*8 xsec(46,56,21,37)
 
 	integer i,j,k,l
 	logical first
@@ -102,7 +102,7 @@ c	write(6,*) 'top of dvcs_xsec',Q2,xb,thpq,phipq
 	      thtab(i) = (i-1)*0.5
 	   enddo
 
-	   do i=1,36
+	   do i=1,37
 	      phitab(i) = (i-1)*10.0
 	   enddo
 
@@ -111,10 +111,13 @@ c	write(6,*) 'top of dvcs_xsec',Q2,xb,thpq,phipq
 	   
 	   do i=1,46 ! Q2
 	     do j=1,56		!xBj
-		do k=1,36	!phipq
-		   do l=1,21	!thpq
+		do k=1,21	!thpq
+		   do l=1,36	!phipq
 		      read(10,*) q2dum,xdum,tdum,phidum,thdum,xsec(i,j,k,l)
-c		      write(6,*) q2dum,xdum,tdum,phidum,thdum,xsec(i,j,k,l)
+		      if(l.eq.36) then
+			 xsec(i,j,k,37) = xsec(i,j,k,1)
+c                        write(6,*) q2dum,xdum,tdum,phidum,thdum,xsec(i,j,k,l)
+		      endif
 		   enddo
 		enddo
 	      enddo
@@ -133,21 +136,16 @@ C loop over variables, find table entries
 		    xlo=xtab(j)
 		    xhi=xtab(j+1)
 		    dx=xhi-xlo
-		    do k=1,36	!phipq
-		       if(phipq.ge.350.0) then
-			  phimax=360.0
-		       else
-			  phimax=phitab(k+1)
-		       endif
-		       if(phipq.gt.phitab(k) .and. phipq.le.phimax) then
-			  philo=phitab(k)
-			  phihi=phitab(k+1)
-			  dphi=phihi-philo
-			  do l=1,21 !thpq
-			     if(thpq.gt.thtab(l) .and. thpq.le.thtab(l+1)) then
-				thlo=thtab(l)
-				thhi=thtab(l+1)
-				dth=thhi-thlo
+		    do k=1,21	!thpq
+		       if(thpq.gt.thtab(k) .and. thpq.le.thtab(k+1)) then
+			  thlo=thtab(k)
+			  thhi=thtab(k+1)
+			  dth=thhi-thlo
+			  do l=1,37 !phipq
+			     if(phipq.gt.phitab(l) .and. phipq.le.phitab(l+1)) then
+				philo=phitab(l)
+				phihi=phitab(l+1)
+				dphi=phihi-philo
 
 				Q2d=(Q2-Q2lo)/dQ2
 				xd=(xb-xlo)/dx
@@ -173,10 +171,10 @@ C loop over variables, find table entries
 				c1 = c01*(1-phid) + c11*phid
 
 				c = c0*(1-thd) + c1*thd
-			     endif ! theta
-			  enddo ! theta
-		       endif	! phi
-		    enddo	! phi
+			     endif ! phi
+			  enddo ! phi
+		       endif	! theta
+		    enddo	! theta
 		 endif		!xb
 	      enddo		!xb
 	   endif		! Q2
