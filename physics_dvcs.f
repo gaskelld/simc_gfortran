@@ -19,7 +19,7 @@
 * photon-NUCLEON center of mass, not the photon-NUCLEUS!  The model gives
 * the cross section in the photon-nucleon center of mass frame.
 
-	real*8 Q2gev,xb,thpqdeg,phpqdeg
+	real*8 Q2gev,xb,thpqdeg,phpqdeg,s
 	real*8 sigma_eegamma,dvcs_xsec
 
 	! Variables calculated in transformation to gamma-NUCLEON center of mass.
@@ -42,18 +42,20 @@
 	main%phicm = phicm
 	main%pcm = ppicm
 	main%davejac = jacobian
-	main%johnjac = jac_old		!approx. assuming collinear boost.
+	main%johnjac = jac_old	!approx. assuming collinear boost.
+c	write (6,*) jacobian,jac_old,100.*(jacobian-jac_old)/jacobian,'%'
 	
 	Q2gev=vertex%q2/1.0d6
 	xb=vertex%q2/2.0/Mp/vertex%nu
 	thpqdeg=main%theta_pq*degrad
 	phpqdeg=main%phi_pq*degrad
 
-	sigma_eegamma=dvcs_xsec(Q2gev,xb,thpqdeg,phpqdeg)/1.0d9	! dsigma/(dQ2 dxb dt dphi) in nb/GeV2--> ub/MeV2
+	sigma_eegamma=dvcs_xsec(Q2gev,xb,thpqdeg,phpqdeg)/1.0d15	! dsigma/(dQ2 dxb dt dphi) in nb/GeV4--> ub/MeV4
 
 	ntup%sigcm=sigma_eegamma*1.0d9
-	
-	jacobian_dis = (main%w**2-Mp**2)*xb*vertex%e%E/(2.0*pi*Mp*vertex%nu)
+
+	s=vertex%Q2*vertex%Ein/(xb*vertex%nu)+Mp**2+Me**2
+	jacobian_dis = (s-Mp**2)*xb*vertex%e%E/(2.0*pi*Mp*vertex%nu)
 	
 	peegamma=sigma_eegamma*jacobian*jacobian_dis
 
