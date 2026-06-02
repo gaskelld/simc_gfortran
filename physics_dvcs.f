@@ -52,7 +52,7 @@ c	write (6,*) jacobian,jac_old,100.*(jacobian-jac_old)/jacobian,'%'
 
 	sigma_eegamma=dvcs_xsec(Q2gev,xb,thpqdeg,phpqdeg)/1.0d15	! dsigma/(dQ2 dxb dt dphi) in nb/GeV4--> ub/MeV4
 
-	ntup%sigcm=sigma_eegamma*1.0d9
+	ntup%sigcm=sigma_eegamma*1.0d15
 
 	s=vertex%Q2*vertex%Ein/(xb*vertex%nu)+Mp**2+Me**2
 	jacobian_dis = (s-Mp**2)*xb*vertex%e%E/(2.0*pi*Mp*vertex%nu)
