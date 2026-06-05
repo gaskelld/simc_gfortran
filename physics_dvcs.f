@@ -21,6 +21,9 @@
 
 	real*8 Q2gev,xb,thpqdeg,phpqdeg,s
 	real*8 sigma_eegamma,dvcs_xsec
+	real*8 FF,W1,W2,Wnuc,Wp,qmu4mp,w1p,w2p,FFrat,GEP,GMP,GEneut,GMN,w1d,w2d,tau
+	real*8 tgev,FDEL
+	
 
 	! Variables calculated in transformation to gamma-NUCLEON center of mass.
         real*8 gstar,bstar,bstarx,bstary,bstarz		!beta of boost to C.M.
@@ -56,8 +59,27 @@ c	write (6,*) jacobian,jac_old,100.*(jacobian-jac_old)/jacobian,'%'
 
 	s=vertex%Q2*vertex%Ein/(xb*vertex%nu)+Mp**2+Me**2
 	jacobian_dis = (s-Mp**2)*xb*vertex%e%E/(2.0*pi*Mp*vertex%nu)
-	
-	peegamma=sigma_eegamma*jacobian*jacobian_dis
+
+	tgev=main%t/1.0E6
+	FFrat=1.0
+	if(which_dvcs.ge.10) then
+           call NFORM_XEM(14,tgev,GEP,GEneut,GMP,GMN)
+c	   call fofa_best_fit(-main%t/hbarc**2,GE,GM)
+
+	   FF  = FDEL(tgev)
+	   TAU = main%t/4./Mp2  
+           W1d  = FF**2*TAU*.6667*(GMN+GMP)**2                           
+           W2d  = W1d+(FF*(1.0*(GEneut+TAU*GMN)+GEP+TAU*GMP)/(1.+TAU))**2   
+	   Wnuc = W2d+2.0*W1d*(tan(vertex%e%theta))**2
+
+	   qmu4mp = main%t/4./Mp2
+	   W1p = GMP**2*qmu4mp
+	   W2p = (GEP**2+GMP**2*qmu4mp)/(1.0+qmu4mp)
+	   Wp = W2p + 2.*W1p*tan(vertex%e%theta/2.)**2
+	   FFrat = Wnuc/Wp
+	endif
+	peegamma=FFrat*sigma_eegamma*jacobian*jacobian_dis
+c	write(6,*) 'cheesy poofs',main%t/1.0d6,Wnuc,Wp,FFrat
 
 	return
 	end
